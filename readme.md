@@ -1,0 +1,7 @@
+## Testnet
+package = `0x61335d7165330594736810e045e84d7fd22621d6cbb868779bbb145ae1e23322`
+reserve address = `0x35400daaf67801c2b6f92ed4c9fa9527ccea035f3190d78066cfaf9cc1d1f217`
+offer market = `0x6b838f318bc250ce5ab9c95cce520c923abf0012c925bdb4f07e0beb42f137d1`
+list market = `0x2ddd4a2207c69e6ac5298ffd6a00d792b3699adef6fc36a19d09b3f745ef2531`
+
+type arg =`0x784370cb40d01b563095e3e3889acf4d1dd2dca66d5d5d05d21c3785e8b4edb8::test_vesca::TestCoin`
