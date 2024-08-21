@@ -4,11 +4,51 @@ module vesca_market::user{
     use vesca_market::vesca_market;
     use vesca_market::reserve;
     use sui::sui::SUI;
+    use sui::event;
     use sui::coin::Coin;
     use sui::coin;
 
     const ENOTENOUGHSUI:u64 = 1; 
     const EWRONGTARGET:u64 = 2;
+
+    public struct ListEvent has copy, drop{
+        asker: address,
+        price: u64
+    }
+
+    public struct UnListEvent has copy, drop{
+        asker: address,
+    }
+
+    public struct OfferEvent has copy, drop{
+        bidder: address,
+        price: u64
+    }
+
+    public struct CancelOfferEvent has copy, drop{
+        bidder: address,
+    }
+
+    public struct TakeOfferEvent has copy, drop{
+        user: address,
+        amount: u64,
+    }
+
+    public struct TakeListEvent has copy, drop{
+        user: address,
+        amount: u64,
+    }
+
+
+    public struct RedeemCoinEvent has copy, drop{
+        user: address,
+        amount: u64
+    }
+    public struct RedeemTokenEvent has copy, drop{
+        user: address,
+        token_address: object::ID
+    }
+
 
     public entry fun list_vetoken<VestedToken:key+store>(listmarket: &mut ListMarket<VestedToken>,
                                                          vested_token: VestedToken,
@@ -22,6 +62,9 @@ module vesca_market::user{
         vesca_market::add_price_to_listmarket(listmarket, nft_address, price);
         // send vested token to orderbook
         vesca_market::list_order_in_listmarket(listmarket, nft_address, vested_token);
+
+        event::emit(ListEvent{asker: ctx.sender(), price: price});
+
         // transfer nft to user
         transfer::public_transfer(order_nft, ctx.sender());
     }
@@ -34,12 +77,13 @@ module vesca_market::user{
         let nft_address = object::id_to_address(&object::id(&order_nft));
         // check whether the order has been taken
         reserve::assert_order_exist(reserve, nft_address);
-
-
         // delete price in price table
         vesca_market::delete_price_in_listmarket(listmarket, nft_address);
         // send vested token to user
         let vested_token = vesca_market::unlist_order_in_listmarket(listmarket,nft_address);
+        
+        event::emit(UnListEvent{asker: ctx.sender()});
+
         transfer::public_transfer(vested_token, ctx.sender());
         // delete ordernft
         vesca_market::delete_ordernft(order_nft);
@@ -71,6 +115,8 @@ module vesca_market::user{
         let pay_coin = coin::split(&mut total_coin, amount, ctx);
         transfer::public_transfer(total_coin, ctx.sender());
 
+        event::emit(OfferEvent{bidder: ctx.sender(), price: amount});
+
         let order_nft = vesca_market::create_order_nft(ctx);
         let nft_address = object::id_to_address(&object::id(&order_nft));
         vesca_market::make_offer_in_offermarket(offermarket, nft_address, pay_coin, target_order);
@@ -88,6 +134,8 @@ module vesca_market::user{
 
         let order_nft = vesca_market::create_order_nft(ctx);
         let nft_address = object::id_to_address(&object::id(&order_nft));
+
+        event::emit(OfferEvent{bidder: ctx.sender(), price: coin::value(&pay_coin)});
         
         vesca_market::make_offer_in_offermarket(offermarket, nft_address, pay_coin, target_order);
         transfer::public_transfer(order_nft, ctx.sender());
@@ -104,6 +152,9 @@ module vesca_market::user{
         // send sui to order maker and delete indexing
         let (order_coin,_) = vesca_market::cancel_offer_in_offermarket(offermarket, nft_address);
         transfer::public_transfer(order_coin, ctx.sender());
+
+        event::emit(CancelOfferEvent{bidder: ctx.sender()});
+
         // delete ordernft
         vesca_market::delete_ordernft(order_nft);
     }
@@ -133,6 +184,9 @@ module vesca_market::user{
         let reserve_coin = coin::split(&mut pay_coin, list_price, ctx);
         // add coin to reserve
         reserve::add_coin_to_reserve(reserve, nft_address, reserve_coin);
+
+        event::emit(TakeListEvent{user:ctx.sender(), amount: pay_amount});
+
         // send residual coin back to tx sender |  add it in the last, compiler will change the sequence of code
         transfer::public_transfer(pay_coin, ctx.sender());
     }
@@ -149,10 +203,14 @@ module vesca_market::user{
         // check whether the order has been taken
         reserve::assert_order_exist(reserve, tarker_order_address);
         
+
+
         // get the sui coin and the offer's target
         let(receive_coin_before_fee, offer_target_address) = vesca_market::cancel_offer_in_offermarket(offermarket, maker_offer_address);
         // check whether it is same as the targe.
         assert!(tarker_order_address==offer_target_address, EWRONGTARGET);
+
+        event::emit(TakeOfferEvent{user:ctx.sender(), amount: coin::value(&receive_coin_before_fee)});
 
         // get vested token from the listmarket and delete price index
         // delete price in price table
@@ -164,6 +222,8 @@ module vesca_market::user{
         
         // delete ordernft
         vesca_market::delete_ordernft(taker_order_nft);
+
+        
         // get sui coin
         transfer::public_transfer(receive_coin_after_fee, ctx.sender());
     }
@@ -173,7 +233,10 @@ module vesca_market::user{
         let nft_address = object::id_to_address(&object::id(&order_nft));
 
         let vested_token = reserve::get_vested_token_from_reserve(reserve, nft_address);
-        transfer::public_transfer(vested_token, ctx.sender());
+        
+        event::emit(RedeemTokenEvent{user:ctx.sender(), token_address: object::id(&vested_token)});
+
+        transfer::public_transfer(vested_token, ctx.sender()); 
         // delete ordernft
         vesca_market::delete_ordernft(order_nft);
     }
@@ -183,6 +246,8 @@ module vesca_market::user{
     let nft_address = object::id_to_address(&object::id(&order_nft));
     // get token
     let receive_coin_after_fee = reserve::get_coin_from_reserve_and_pay_fee(reserve, nft_address, ctx);
+
+    event::emit(RedeemCoinEvent{user:ctx.sender(), amount: coin::value(&receive_coin_after_fee)});
 
     transfer::public_transfer(receive_coin_after_fee, ctx.sender());
     // delete ordernft
