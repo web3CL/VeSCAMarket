@@ -2,22 +2,49 @@
 
 [move]
 version = 2
-manifest_digest = "B126766636438CCD60ECFF3F96CF969765AA818814E85A6FD33A3637101E6BF0"
-deps_digest = "F8BBB0CCB2491CA29A3DF03D6F92277A4F3574266507ACD77214D37ECA3F3082"
+manifest_digest = "090B2A422C3A5DB1107AD47263EA5531064C6E48BCB580E6CE739EF9838BEA92"
+deps_digest = "3C4103934B1E040BB6B23F1D610B4EF9F2F1166A50A104EADCF77467C004C600"
 dependencies = [
   { name = "Sui" },
+  { name = "VeSca" },
 ]
 
 [[move.package]]
 name = "MoveStdlib"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "framework/testnet", subdir = "crates/sui-framework/packages/move-stdlib" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "mainnet", subdir = "crates/sui-framework/packages/move-stdlib" }
+
+[[move.package]]
+name = "Sca"
+source = { git = "https://github.com/scallop-io/sca.git", rev = "main", subdir = "sca" }
+
+dependencies = [
+  { name = "Sui" },
+  { name = "XSupply" },
+]
 
 [[move.package]]
 name = "Sui"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "framework/testnet", subdir = "crates/sui-framework/packages/sui-framework" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "mainnet", subdir = "crates/sui-framework/packages/sui-framework" }
 
 dependencies = [
   { name = "MoveStdlib" },
+]
+
+[[move.package]]
+name = "VeSca"
+source = { local = "../../external/ve-sca-interface" }
+
+dependencies = [
+  { name = "Sca" },
+  { name = "Sui" },
+]
+
+[[move.package]]
+name = "XSupply"
+source = { git = "https://github.com/scallop-io/sca.git", rev = "main", subdir = "x_supply" }
+
+dependencies = [
+  { name = "Sui" },
 ]
 
 [move.toolchain-version]
