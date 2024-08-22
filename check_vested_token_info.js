@@ -3,7 +3,7 @@ import { getFullnodeUrl, SuiClient } from "@mysten/sui/client"
 const client = new SuiClient({ url: "https://sui-mainnet-rpc.nodereal.io/" });
 
 // input the address of VeSCA key, and get the info.
-const vesca_address = "0xbfb3ead05b9ce64c9ee39ddb0ed6432ff9980f7559db7ebc304fe43093e17802";
+const vesca_address = "0x88e811a81d1e32ca65373c5f3a5d725da35a844603df277ad60af91c6532add6";
 
 let result = await client.getDynamicFieldObject({
     parentId: "0x0a0b7f749baeb61e3dfee2b42245e32d0e6b484063f0a536b33e771d573d7246",
@@ -37,3 +37,17 @@ let converted_sca_amount = locked_sca_amount / Math.pow(10,decimal);
 
 console.log(converted_sca_amount," SCA will be unlocked at:", unixToHumanReadable(unlock_at));
 
+function calculateVeSCA(scaAmount, unlockTime) {
+    const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+    const fourYearsInSeconds = 4 * 365 * 24 * 60 * 60; // 4 years in seconds
+    
+    // Calculate the remaining lock period in seconds
+    const remainLockPeriod = Math.max(0, unlockTime - currentTime);
+    
+    // Calculate veSCA using the provided formula
+    const veSCA = scaAmount * (remainLockPeriod / fourYearsInSeconds);
+    
+    return veSCA;
+  }
+
+  console.log(`veSCA amount: ${calculateVeSCA(converted_sca_amount, unlock_at)}`);
