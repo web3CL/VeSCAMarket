@@ -6,8 +6,14 @@ module vesca_market::reserve{
     use sui::coin::Coin;
     use sui::balance;
     use sui::coin;
+    use sui::event;
 
     const EORDERTAKEN:u64 = 0;
+
+    public struct PayFeeEvent has copy, drop{
+        payer: address,
+        fee: u64
+    }
 
     public struct ReserveAdmin has key,store{
         id: UID,
@@ -19,7 +25,7 @@ module vesca_market::reserve{
         coin_reserve: ObjectTable<address, Coin<SUI>>, // address is the same as the address of ordernft
         vested_token_reserve: ObjectTable<address, VestedToken>,
         fee: Balance<SUI>,
-        fee_rate: u64 // fee_rate/1000
+        fee_rate: u64 // fee_rate/1_000
     }
 
     fun init(ctx: &mut TxContext) {
@@ -35,18 +41,26 @@ module vesca_market::reserve{
     public(package) fun get_coin_from_reserve_and_pay_fee<VestedToken: key+store>(reserve: &mut Reserve<VestedToken>, nft_address:address, ctx: &mut TxContext):Coin<SUI>{
         let mut receive_coin = object_table::remove(&mut reserve.coin_reserve, nft_address);
         // add fee logic here
-        let fee_amount = coin::value(&receive_coin) * reserve.fee_rate / 1000;
+        let fee_amount = coin::value(&receive_coin) * reserve.fee_rate / 1_000;
         let fee_coin = coin::split(&mut receive_coin, fee_amount, ctx);
         balance::join(&mut reserve.fee, coin::into_balance(fee_coin));
+
+        // emit pay fee event
+        event::emit(PayFeeEvent{payer: ctx.sender(), fee: fee_amount});
+
         receive_coin        
     }
     // used to sell vested token
     public(package) fun add_vested_token_to_reserve_and_pay_fee<VestedToken: key+store>(reserve: &mut Reserve<VestedToken>, nft_address:address, vested_token: VestedToken, mut receive_coin: Coin<SUI>, ctx: &mut TxContext):Coin<SUI>{
         object_table::add(&mut reserve.vested_token_reserve, nft_address, vested_token);
         // pay fees
-        let fee_amount = coin::value(&receive_coin) * reserve.fee_rate / 1000;
+        let fee_amount = coin::value(&receive_coin) * reserve.fee_rate / 1_000;
         let fee_coin = coin::split(&mut receive_coin, fee_amount, ctx);
         balance::join(&mut reserve.fee, coin::into_balance(fee_coin));
+
+        // emit pay fee event
+        event::emit(PayFeeEvent{payer: ctx.sender(), fee: fee_amount});
+
         receive_coin
     }
 
