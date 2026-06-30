@@ -1,0 +1,28 @@
+{
+  "name": "vesca-market",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Full-stack Sui dApp monorepo for the VeSCA vested token marketplace.",
+  "type": "module",
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace apps/web",
+    "build:web": "npm run build --workspace apps/web",
+    "lint:web": "npm run lint --workspace apps/web",
+    "move:build": "sui move build --path contracts/vesca_market && sui move build --path contracts/test_vesca",
+    "move:test": "sui move test --path contracts/vesca_market && sui move test --path contracts/test_vesca",
+    "sui:check-list-price": "node scripts/sui/check_list_price.js",
+    "sui:check-listed-tokens": "node scripts/sui/check_list_vested_token.js",
+    "sui:check-vested-token": "node scripts/sui/check_vested_token_info.js"
+  },
+  "keywords": [
+    "sui",
+    "move",
+    "defi",
+    "nextjs",
+    "dapp",
+    "vesca"
+  ]
+}
